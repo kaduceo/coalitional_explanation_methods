@@ -1,8 +1,7 @@
 import numpy as np
-import pandas as pd
 import pickle
 from sklearn.base import clone
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 
 def generate_groups_wo_label(nb_attributs):

@@ -2,18 +2,17 @@ import coalitional_methods as coal
 import drawing
 import random
 
-from sklearn.datasets import load_breast_cancer
+from sklearn.datasets import load_iris
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
 
-dataset = load_breast_cancer(as_frame=True)
+dataset = load_iris(as_frame=True)
 X, y = dataset.data, dataset.target
 
 model = RandomForestClassifier()
 model.fit(X.values, y.values.flatten())
 
 spearman_infs_comp25 = coal.coalitional_method(
-    X, y, model, 0.25, method="spearman", complexity=True
+    X, y, model, 0.25, method="spearman", complexity=False
 )
 
 abs(spearman_infs_comp25).mean().sort_values(ascending=True).plot(
