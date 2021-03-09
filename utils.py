@@ -4,6 +4,7 @@ Copyright (C) 2020 Gabriel Ferrettini <gabriel.ferrettini@irit.fr>
 
 utils.py
 Copyright (C) 2020 Elodie Escriva, Kaduceo <elodie.escriva@kaduceo.com>
+Copyright (C) 2020 Jean-Baptiste Excoffier, Kaduceo <jeanbaptiste.excoffier@kaduceo.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -125,7 +126,8 @@ def remove_inclusions(groups):
     ]
 
 
-def train_models(model, X, y, groups):
+
+def train_models(model, X, y, groups, problem_type, fvoid):
     """
     Trains the model with all the attributs, compute the
     and an array of model, each one wo one group of attribut
@@ -157,7 +159,11 @@ def train_models(model, X, y, groups):
         model_clone = clone(model)
 
         if len(group) == 0:
-            fvoid = y.value_counts().values / y.shape[0]
+            if fvoid is None :
+                if problem_type == "Classification" :
+                    fvoid = y.value_counts(normalize=True).sort_index().values                  # A MODIFIER!
+                elif problem_type == "Regression" :
+                    fvoid = y.mean()
             pretrained_models[tuple(group)] = fvoid
         elif len(group) < n_variables:
             model_clone.fit(X[X.columns[group]].values, y.values.flatten())
@@ -168,7 +174,7 @@ def train_models(model, X, y, groups):
     return pretrained_models
 
 
-def explain_groups_w_retrain(pretrained_models, X):
+def explain_groups_w_retrain(pretrained_models, X, problem_type, look_at):
     """
     Compute the influence of each atributs or group of attributs for the instance
     in parameter.
@@ -203,12 +209,25 @@ def explain_groups_w_retrain(pretrained_models, X):
         else:
             model = pickle.loads(pretrained_models.get(group))
             X_groups = X[X.columns[list(group)]]
-            preds_proba = model.predict_proba(X_groups)
+            
+            if problem_type == "Classification" :
+                preds_proba = model.predict_proba(X_groups)
 
-            for i in X.index:
-                explanations_groups[i][group] = (
-                    preds_proba[i][preds[i]] - fvoid[preds[i]]
-                )
+                for i in X.index:
+                    look_at_i = look_at
+                    if look_at == None :
+                        look_at_i = preds[i]
+                    explanations_groups[i][group] = (
+                    preds_proba[i][look_at_i] - fvoid[look_at_i]
+                    )
+                    
+            elif problem_type == "Regression" :
+                preds_ = model.predict(X_groups)
+
+                for i in X.index:
+                    explanations_groups[i][group] = (
+                    preds_[i] - fvoid
+                    )
 
     return explanations_groups
 

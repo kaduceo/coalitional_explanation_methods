@@ -3,7 +3,8 @@ Coalitional explanation method
 Copyright (C) 2020 Gabriel Ferrettini <gabriel.ferrettini@irit.fr>
 
 coalitional_methods.py
-Copyright (C) 2020 Elodie Escriva and Jean-Baptiste Excoffier, Kaduceo <elodie.escriva@kaduceo.com>
+Copyright (C) 2020 Elodie Escriva, Kaduceo <elodie.escriva@kaduceo.com>
+Copyright (C) 2020 Jean-Baptiste Excoffier, Kaduceo <jeanbaptiste.excoffier@kaduceo.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -300,8 +301,7 @@ def compute_coalitional_influences(raw_groups_influences, X, relevant_groups):
 
 
 def coalitional_method(
-    X, y, model, rate, method="spearman", reverse=False, complexity=False, scaler=False
-):
+    X, y, model, rate, problem_type, fvoid=None, look_at=None, method="spearman", reverse=False, complexity=False, scaler=False):
     methods = {"pca": pca_grouping, "spearman": spearman_grouping, "vif": vif_grouping}
 
     if method not in methods.keys():
@@ -320,8 +320,8 @@ def coalitional_method(
 
     groups = compute_subgroups_correlation(groups) + [[]]
 
-    pretrained_models = train_models(model, X, y, groups)
-    raw_groups_influences = explain_groups_w_retrain(pretrained_models, X)
+    pretrained_models = train_models(model, X, y, groups, problem_type, fvoid)
+    raw_groups_influences = explain_groups_w_retrain(pretrained_models, X, problem_type, look_at)
     coalition_influences = compute_coalitional_influences(
         raw_groups_influences, X, groups
     )

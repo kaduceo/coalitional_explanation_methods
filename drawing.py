@@ -37,14 +37,19 @@ def draw_avg_influence_per_class(influences, labels, labels_name):
     plt.show()
 
 
-def draw_influence_instance(influences, label, labels_name, id_instance):
+def draw_influence_instance(influences, label, labels_name, id_instance, problem_type):
     infs_instance = influences.iloc[id_instance].sort_values(ascending=True)
     print(influences.iloc[id_instance])
     print(infs_instance)
     colors = ["green" if x > 0 else "red" for x in infs_instance]
-    plt.title(
-        "Patient : {} ; Class : {}".format(id_instance, labels_name[label[id_instance]])
-    )
+    
+    if problem_type == "Regression" :
+        title_ = "Patient : {} ; True Value : {}".format(id_instance, label[id_instance])
+    else :
+        title_ = "Patient : {} ; True Class : {}".format(id_instance, labels_name[label[id_instance]])
+                                                
+                                                
+    plt.title(title_)
     plt.xlabel("Influences")
     infs_instance.plot.barh(color=colors)
     plt.show()

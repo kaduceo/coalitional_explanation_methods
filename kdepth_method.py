@@ -58,12 +58,12 @@ def compute_kdepth_influences(raw_groups_influences, X, relevant_groups, k):
     return kdepth_influences
 
 
-def kdepth_method(X, y, model, k):
+def kdepth_method(X, y, model, k, problem_type, fvoid=None, look_at=None):
     groups = generate_groups_wo_label(X.shape[1])
     groups_kdepth = [groups[i] for i in range(len(groups)) if len(groups[i]) <= k]
 
-    pretrained_models = train_models(model, X, y, groups_kdepth)
-    raw_groups_influences = explain_groups_w_retrain(pretrained_models, X)
+    pretrained_models = train_models(model, X, y, groups_kdepth, problem_type, fvoid)
+    raw_groups_influences = explain_groups_w_retrain(pretrained_models, X, problem_type, look_at)
     kdepth_influences = compute_kdepth_influences(
         raw_groups_influences, X, groups_kdepth, k
     )
@@ -89,12 +89,12 @@ def compute_linear_influences(raw_groups_influences, X):
     return linear_influences
 
 
-def linear_method(X, y, model):
+def linear_method(X, y, model, problem_type, fvoid=None, look_at=None):
     groups = [[i] for i in range(X.shape[1])]
     groups += [[]]
 
-    pretrained_models = train_models(model, X, y, groups)
-    raw_groups_influences = explain_groups_w_retrain(pretrained_models, X)
+    pretrained_models = train_models(model, X, y, groups, problem_type, fvoid)
+    raw_groups_influences = explain_groups_w_retrain(pretrained_models, X, problem_type, look_at)
 
     linear_influences = compute_linear_influences(raw_groups_influences, X)
 

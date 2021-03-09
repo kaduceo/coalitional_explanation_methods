@@ -206,13 +206,13 @@ def compute_coalitional_influences(raw_groups_influences, X, relevant_groups):
     return coalitional_influences
 
 
-def modelbased_method(X, y, model, threshold):
+def modelbased_method(X, y, model, threshold, problem_type, fvoid=None, look_at=None):
     groups = model_grouping(X, model, threshold) if X.shape[1] != 1 else [[0]]
 
     groups = compute_subgroups_correlation(groups) + [[]]
 
-    pretrained_models = train_models(model, X, y, groups)
-    raw_groups_influences = explain_groups_w_retrain(pretrained_models, X)
+    pretrained_models = train_models(model, X, y, groups, problem_type, fvoid)
+    raw_groups_influences = explain_groups_w_retrain(pretrained_models, X, problem_type, look_at)
     coalition_influences = compute_coalitional_influences(
         raw_groups_influences, X, groups
     )

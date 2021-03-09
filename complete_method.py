@@ -55,11 +55,11 @@ def compute_complete_influences(raw_groups_influences, X):
     return complete_influences
 
 
-def complete_method(X, y, model):
+def complete_method(X, y, model, problem_type, fvoid=None, look_at=None):
     groups = generate_groups_wo_label(X.shape[1])
 
-    pretrained_models = train_models(model, X, y, groups)
-    raw_groups_influences = explain_groups_w_retrain(pretrained_models, X)
+    pretrained_models = train_models(model, X, y, groups, problem_type, fvoid)
+    raw_groups_influences = explain_groups_w_retrain(pretrained_models, X, problem_type, look_at)
 
     complete_influences = compute_complete_influences(raw_groups_influences, X)
 
