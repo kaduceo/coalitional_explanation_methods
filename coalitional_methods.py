@@ -249,7 +249,7 @@ def find_alpha_rate(coal_function, n_rate, X, max_iterations=100):
 def complexity_coal_groups(X, rate, grouping_function):
     n_total = 2 ** X.shape[1] - 1
     n_rate = int(np.round(n_total * rate, 0))
-    coal_groups = find_alpha_rate(
+    coal_groups, alpha = find_alpha_rate(
         coal_function=lambda X_, threshold: remove_inclusions(
             grouping_function(X_, threshold)
         ),
@@ -301,7 +301,18 @@ def compute_coalitional_influences(raw_groups_influences, X, relevant_groups):
 
 
 def coalitional_method(
-    X, y, model, rate, problem_type, fvoid=None, look_at=None, method="spearman", reverse=False, complexity=False, scaler=False):
+    X,
+    y,
+    model,
+    rate,
+    problem_type,
+    fvoid=None,
+    look_at=None,
+    method="spearman",
+    reverse=False,
+    complexity=False,
+    scaler=False,
+):
     methods = {"pca": pca_grouping, "spearman": spearman_grouping, "vif": vif_grouping}
 
     if method not in methods.keys():
@@ -321,7 +332,9 @@ def coalitional_method(
     groups = compute_subgroups_correlation(groups) + [[]]
 
     pretrained_models = train_models(model, X, y, groups, problem_type, fvoid)
-    raw_groups_influences = explain_groups_w_retrain(pretrained_models, X, problem_type, look_at)
+    raw_groups_influences = explain_groups_w_retrain(
+        pretrained_models, X, problem_type, look_at
+    )
     coalition_influences = compute_coalitional_influences(
         raw_groups_influences, X, groups
     )

@@ -71,7 +71,6 @@ def generate_subgroups_group(group):
 
 def compute_subgroups_correlation(groups):
     subgroups_list = []
-
     for group in groups:
         subgroups_list.extend(
             [
@@ -126,7 +125,6 @@ def remove_inclusions(groups):
     ]
 
 
-
 def train_models(model, X, y, groups, problem_type, fvoid):
     """
     Trains the model with all the attributs, compute the
@@ -159,10 +157,12 @@ def train_models(model, X, y, groups, problem_type, fvoid):
         model_clone = clone(model)
 
         if len(group) == 0:
-            if fvoid is None :
-                if problem_type == "Classification" :
-                    fvoid = y.value_counts(normalize=True).sort_index().values                  # A MODIFIER!
-                elif problem_type == "Regression" :
+            if fvoid is None:
+                if problem_type == "Classification":
+                    fvoid = (
+                        y.value_counts(normalize=True).sort_index().values
+                    )  # A MODIFIER!
+                elif problem_type == "Regression":
                     fvoid = y.mean()
             pretrained_models[tuple(group)] = fvoid
         elif len(group) < n_variables:
@@ -209,25 +209,23 @@ def explain_groups_w_retrain(pretrained_models, X, problem_type, look_at):
         else:
             model = pickle.loads(pretrained_models.get(group))
             X_groups = X[X.columns[list(group)]]
-            
-            if problem_type == "Classification" :
+
+            if problem_type == "Classification":
                 preds_proba = model.predict_proba(X_groups)
 
                 for i in X.index:
                     look_at_i = look_at
-                    if look_at == None :
+                    if look_at == None:
                         look_at_i = preds[i]
                     explanations_groups[i][group] = (
-                    preds_proba[i][look_at_i] - fvoid[look_at_i]
+                        preds_proba[i][look_at_i] - fvoid[look_at_i]
                     )
-                    
-            elif problem_type == "Regression" :
+
+            elif problem_type == "Regression":
                 preds_ = model.predict(X_groups)
 
                 for i in X.index:
-                    explanations_groups[i][group] = (
-                    preds_[i] - fvoid
-                    )
+                    explanations_groups[i][group] = preds_[i] - fvoid
 
     return explanations_groups
 
