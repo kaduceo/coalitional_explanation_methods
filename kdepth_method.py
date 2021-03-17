@@ -1,9 +1,13 @@
 """
-Coalitional explanation method
+K-depth explanation method (https://hal.archives-ouvertes.fr/hal-02942310)
 Copyright (C) 2020 Gabriel Ferrettini <gabriel.ferrettini@irit.fr>
+Copyright (C) 2020 Julien Aligon <julien.aligoni@irit.fr>
+Copyright (C) 2020 Chantal Soulé-Dupuy <chantal.soule-dupuy@irit.fr>
 
 kdepth_method.py
 Copyright (C) 2020 Elodie Escriva, Kaduceo <elodie.escriva@kaduceo.com>
+Copyright (C) 2020 Jean-Baptiste Excoffier, Kaduceo <jeanbaptiste.excoffier@kaduceo.com>
+
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -63,7 +67,9 @@ def kdepth_method(X, y, model, k, problem_type, fvoid=None, look_at=None):
     groups_kdepth = [groups[i] for i in range(len(groups)) if len(groups[i]) <= k]
 
     pretrained_models = train_models(model, X, y, groups_kdepth, problem_type, fvoid)
-    raw_groups_influences = explain_groups_w_retrain(pretrained_models, X, problem_type, look_at)
+    raw_groups_influences = explain_groups_w_retrain(
+        pretrained_models, X, problem_type, look_at
+    )
     kdepth_influences = compute_kdepth_influences(
         raw_groups_influences, X, groups_kdepth, k
     )
@@ -94,7 +100,9 @@ def linear_method(X, y, model, problem_type, fvoid=None, look_at=None):
     groups += [[]]
 
     pretrained_models = train_models(model, X, y, groups, problem_type, fvoid)
-    raw_groups_influences = explain_groups_w_retrain(pretrained_models, X, problem_type, look_at)
+    raw_groups_influences = explain_groups_w_retrain(
+        pretrained_models, X, problem_type, look_at
+    )
 
     linear_influences = compute_linear_influences(raw_groups_influences, X)
 

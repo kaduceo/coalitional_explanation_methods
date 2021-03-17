@@ -1,6 +1,12 @@
 """
+Model-based coalitional explanation method (https://hal.archives-ouvertes.fr/hal-03138314)
+Copyright (C) 2020 Gabriel Ferrettini <gabriel.ferrettini@irit.fr>
+Copyright (C) 2020 Julien Aligon <julien.aligoni@irit.fr>
+Copyright (C) 2020 Chantal Soulé-Dupuy <chantal.soule-dupuy@irit.fr>
+
 model_based_method.py
 Copyright (C) 2020 Elodie Escriva, Kaduceo <elodie.escriva@kaduceo.com>
+Copyright (C) 2020 Jean-Baptiste Excoffier, Kaduceo <jeanbaptiste.excoffier@kaduceo.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

@@ -1,6 +1,8 @@
 """
-Coalitional explanation method
+Coalitional explanation method (https://hal.archives-ouvertes.fr/hal-03138314)
 Copyright (C) 2020 Gabriel Ferrettini <gabriel.ferrettini@irit.fr>
+Copyright (C) 2020 Julien Aligon <julien.aligon@irit.fr>
+Copyright (C) 2020 Chantal Soulé-Dupuy <chantal.soule-dupuy@irit.fr>
 
 coalitional_methods.py
 Copyright (C) 2020 Elodie Escriva, Kaduceo <elodie.escriva@kaduceo.com>

@@ -1,6 +1,7 @@
 """
 drawing.py
 Copyright (C) 2020 Elodie Escriva, Kaduceo <elodie.escriva@kaduceo.com>
+Copyright (C) 2020 Jean-Baptiste Excoffier, Kaduceo <jeanbaptiste.excoffier@kaduceo.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -39,16 +40,17 @@ def draw_avg_influence_per_class(influences, labels, labels_name):
 
 def draw_influence_instance(influences, label, labels_name, id_instance, problem_type):
     infs_instance = influences.iloc[id_instance].sort_values(ascending=True)
-    print(influences.iloc[id_instance])
-    print(infs_instance)
     colors = ["green" if x > 0 else "red" for x in infs_instance]
-    
-    if problem_type == "Regression" :
-        title_ = "Patient : {} ; True Value : {}".format(id_instance, label[id_instance])
-    else :
-        title_ = "Patient : {} ; True Class : {}".format(id_instance, labels_name[label[id_instance]])
-                                                
-                                                
+
+    if problem_type == "Regression":
+        title_ = "Patient : {} ; True Value : {}".format(
+            id_instance, label[id_instance]
+        )
+    else:
+        title_ = "Patient : {} ; True Class : {}".format(
+            id_instance, labels_name[label[id_instance]]
+        )
+
     plt.title(title_)
     plt.xlabel("Influences")
     infs_instance.plot.barh(color=colors)

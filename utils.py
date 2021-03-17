@@ -1,6 +1,8 @@
 """
-Coalitional explanation method
+Coalitional explanation method (https://hal.archives-ouvertes.fr/hal-03138314)
 Copyright (C) 2020 Gabriel Ferrettini <gabriel.ferrettini@irit.fr>
+Copyright (C) 2020 Julien Aligon <julien.aligoni@irit.fr>
+Copyright (C) 2020 Chantal Soulé-Dupuy <chantal.soule-dupuy@irit.fr>
 
 utils.py
 Copyright (C) 2020 Elodie Escriva, Kaduceo <elodie.escriva@kaduceo.com>
@@ -159,9 +161,7 @@ def train_models(model, X, y, groups, problem_type, fvoid):
         if len(group) == 0:
             if fvoid is None:
                 if problem_type == "Classification":
-                    fvoid = (
-                        y.value_counts(normalize=True).sort_index().values
-                    )  # A MODIFIER!
+                    fvoid = y.value_counts(normalize=True).sort_index().values
                 elif problem_type == "Regression":
                     fvoid = y.mean()
             pretrained_models[tuple(group)] = fvoid
