@@ -38,7 +38,7 @@ from utils import remove_inclusions, generate_subgroups_group, coal_penalisation
 
 def compute_vifs(datas):
     """
-    Compute VIF for each attribut in the dataset.
+    Compute Variance Inflation Factor for each attribut in the dataset.
 
     Parameters
     ----------
@@ -63,21 +63,21 @@ def compute_vifs(datas):
 
 def vif_grouping(datas, threshold, reverse=False):
     """
-    Generate groups of attributs based on VIF ir reverse VIF methods
+    Generate groups of attributs based on VIF or reverse VIF method.
 
     Parameters
     ----------
     datas : pandas.DataFrame
-         Dataframe of the input datas.
+        Dataframe of the input datas.
     threshold : float
         Correlation threshold between two attributes.
-    reverse : boolean
-        Define the method to use (Reverse or not). Default False.
+    reverse : boolean, default=False
+        Define the method to use : reverse or not.
 
     Returns
     -------
     groups : two-dimensional list
-        List of groups of uncorrelated attributs based on the reverse VIF methods.
+        Groups of (un)correlated attributs based on the (reverse) VIF method.
 
     """
 
@@ -121,13 +121,13 @@ def spearman_grouping(datas, threshold, reverse=False):
         Dataframe of the input datas.
     threshold : float
         Correlation threshold between two attributes.
-    reverse : boolean
-        Define the method to use (Reverse or not). Default False.
+    reverse : boolean, default=false
+        Define the method to use : reverse or not.
 
     Returns
     -------
     groups : two-dimensional list
-        List of groups of uncorrelated attributs based on the reverse Spearman methods.
+        Groups of (un)correlated attributs based on the (reverse) Spearman method.
 
     """
 
@@ -168,21 +168,19 @@ def spearman_grouping(datas, threshold, reverse=False):
 
 def pca_grouping(datas, threshold):
     """
-    Generate groups of attributs based on PCA methods
+    Generate groups of attributs based on PCA method.
 
     Parameters
     ----------
     datas : pandas.DataFrame
-         Dataframe of the input datas..
+         Dataframe of the input datas.
     threshold : float
         Correlation threshold between two attributes.
-    scaler: boolean
-        Flag for apply a scaler to the datas.
 
     Returns
     -------
     groups : two-dimensional list
-        List of groups of correlated attributs based on the PCA methods.
+        Groups of correlated attributs based on the PCA method.
     """
 
     groups = []
@@ -217,6 +215,29 @@ def compute_number_distinct_subgroups(groups):
 
 
 def find_alpha_rate(coal_function, n_rate, X, max_iterations=100):
+    """
+    Compute the alpha to achieve the wanted complexity rate.
+    Bisection method is used to find the appropriate alpha-threshold.
+
+    Parameters
+    ----------
+    coal_function : String
+        Name of the coalitional method to use.
+    n_rate : int
+        Number of subgroups needed to achieve complexity rate.
+    X : pandas.DataFrame
+        Dataframe of the input datas.
+    max_iterations : int, default=100
+        Maximum number of iteration for the bisection.
+
+    Returns
+    -------
+    subgroups_best : two-dimensional list
+        Groups of attributs compute with the best alpha and the coalition method.
+    alpha_best : float
+        Best alpha-threshold find by the bisection method
+    """
+
     alpha = 0.5
     subgroups = coal_function(X, threshold=alpha)
     nb_subgroups = compute_number_distinct_subgroups(subgroups)
@@ -249,6 +270,23 @@ def find_alpha_rate(coal_function, n_rate, X, max_iterations=100):
 
 
 def complexity_coal_groups(X, rate, grouping_function):
+    """
+    Compute attributs groups based on the method and the complexity rate in parameter.
+
+    Parameters
+    ----------
+    X : pandas.DataFrame
+        Dataframe of the input datas.
+    rate : float
+        Complexity percentage.
+    grouping_function : string
+        Name of the coalitional method to use.
+
+    Returns
+    -------
+    coal_groups : two-dimensional list
+        Groups of correlated attributs compute with the selected method.
+    """
     n_total = 2 ** X.shape[1] - 1
     n_rate = int(np.round(n_total * rate, 0))
     coal_groups, alpha = find_alpha_rate(
@@ -257,14 +295,30 @@ def complexity_coal_groups(X, rate, grouping_function):
         ),
         n_rate=n_rate,
         X=X,
-        max_iterations=50,
     )
 
     return coal_groups
 
 
 def compute_instance_coal_inf(raw_instance_inf, columns, relevant_groups):
-    """ Coalitional method for one instance, when attributs overlap in groups (Ferrettini et al. 2020)"""
+    """ 
+    Compute the influence of each attribut for one instance, based on the coalitional method.
+    Attributs can overlap in groups.
+    
+    Parameters
+    ----------
+    raw_instance_inf : dict {tuple : float}
+        Influence of each group of attributs for one instance.
+    columns : list
+        Names of attributs in the dataset.
+    relevant_groups : list
+        Groups of attributs defined by the coalition method.
+
+    Returns
+    -------
+    influences : dict {string : float}
+        Influence of each attribut for the instance. Key is the name of the attributs, value is the numeric influence.
+    """
 
     influences = dict([(c, 0) for c in columns])
     denoms_shap = dict([(c, 0) for c in columns])
@@ -286,14 +340,28 @@ def compute_instance_coal_inf(raw_instance_inf, columns, relevant_groups):
     return influences
 
 
-def compute_coalitional_influences(raw_groups_influences, X, relevant_groups):
-    """Coalitional method for all instances, when attributs overlap in groups
-    (Ferrettini et al. 2020)"""
+def compute_coalitional_influences(raw_influences, X, relevant_groups):
+    """Coalitional method for all instances, when attributs overlap in groups.
+    
+    Parameters
+    ----------
+    raw_influences : dict {int : dict {tuple : float}}
+        Influence of each group of attributs for all instances.
+    X : pandas.DataFrame
+        The training input samples.
+    relevant_groups : list
+        Groups of attributs defined by the coalition method.
+
+    Returns
+    -------
+    coalitional_influences : pandas.DataFrame
+        Influences for each attributs and each instances in the dataset.
+    """
 
     coalitional_influences = pd.DataFrame(columns=X.columns)
 
     for instance in X.index:
-        raw_infs = raw_groups_influences[instance]
+        raw_infs = raw_influences[instance]
         influences = compute_instance_coal_inf(raw_infs, X.columns, relevant_groups)
         coalitional_influences = coalitional_influences.append(
             pd.Series(influences, name=instance)
@@ -315,6 +383,43 @@ def coalitional_method(
     complexity=False,
     scaler=False,
 ):
+
+    """
+    Compute the influences based on the method in parameters.
+
+    Parameters
+    ----------
+    X : pandas.DataFrame
+        The training input samples.
+    y : pandas.DataFrame
+        The target values (class labels in classification, real numbers in regression).
+    model : pandas.DataFrame
+        Model to train and explain.
+    rate : float
+        Number to use for computing coalitional groups.
+    problem_type : {"classification", "regression"}
+        Type of machine learning problem.
+    fvoid : float, default=None
+        Prediction when all attributs are unknown. If None, the default value is used (expected value for each class for classification, mean label for regression).
+    look_at : int, default=None
+        Class to look at when computing influences in case of classification problem.
+        If None, prediction is used.
+    method : {"pca", "spearman", "vif"}, default="spearman"
+        Name of the coalition method to compute attributs groups. 
+    reverse : boolean, default=False
+        Type of method to use for Spearman and VIF coalition method.
+    complexity : boolean, default=False
+        Approach to calculating the threshold for coalition methods. 
+        If False, rate parameter is use as alpha-threshold. 
+        If True, rate is use as complexity rate to compute the alpha-threshold.
+    scaler : boolean, default=False
+        If True, a Standard Scaler is apply to data before compute PCA coalitional method.
+
+    Returns
+    -------
+    coalition_influences : two-dimensional list
+        Influences for each attributs and each instances in the dataset.  
+    """
     methods = {"pca": pca_grouping, "spearman": spearman_grouping, "vif": vif_grouping}
 
     if method not in methods.keys():
@@ -337,6 +442,7 @@ def coalitional_method(
     raw_groups_influences = explain_groups_w_retrain(
         pretrained_models, X, problem_type, look_at
     )
+
     coalition_influences = compute_coalitional_influences(
         raw_groups_influences, X, groups
     )

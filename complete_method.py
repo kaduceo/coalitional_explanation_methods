@@ -24,8 +24,23 @@ from utils import train_models, explain_groups_w_retrain, influence_calcul
 
 
 def compute_instance_complete_inf(raw_instance_inf, columns):
-    """Complete method, per instance
-    Shapley value approximation (Strumbelj et al. 2010)"""
+    """
+    Computes influence of each attributs for one instance with the complete method.
+    Shapley value approximation (Strumbelj et al. 2010)
+    
+    Parameters
+    ----------
+    raw_instance_inf : dict {tuple : float}
+        Influence of each group of attributs of a instance.
+    columns : list
+        Names of attributs in the dataset.
+
+    Returns
+    -------
+    influences : dict {string : float}
+        Influence of each attributs for the instance. Key is the attribut name, value in the numeric influence.
+
+    """
 
     influences = dict([(c, 0) for c in columns])
 
@@ -40,14 +55,28 @@ def compute_instance_complete_inf(raw_instance_inf, columns):
     return influences
 
 
-def compute_complete_influences(raw_groups_influences, X):
-    """Complete method, for all instances
-    Shapley value approximation (Strumbelj et al. 2010)"""
+def compute_complete_influences(raw_influences, X):
+    """
+    Complete method, for all instances
+    Shapley value approximation (Strumbelj et al. 2010)
+    
+    Parameters
+    ----------
+    raw_influences : dict {int : dict {tuple : float}}
+        Influence of each group of attributs for all instances.
+    X : pandas.DatFrame
+        The training input samples.
+
+    Returns
+    -------
+    influences : dict {string : float}
+        Influences for each attributs and each instances in the dataset.
+    """
 
     complete_influences = pd.DataFrame(columns=X.columns)
 
     for instance in X.index:
-        raw_infs = raw_groups_influences[instance]
+        raw_infs = raw_influences[instance]
         influences = compute_instance_complete_inf(raw_infs, X.columns)
         complete_influences = complete_influences.append(
             pd.Series(influences, name=instance)
@@ -57,13 +86,39 @@ def compute_complete_influences(raw_groups_influences, X):
 
 
 def complete_method(X, y, model, problem_type, fvoid=None, look_at=None):
+    """
+    Compute the influences based on the complete method.
+
+    Parameters
+    ----------
+    X : pandas.DatFrame
+        The training input samples.
+    y : pandas.DataFrame
+        The target values (class labels in classification, real numbers in regression).
+    model : pandas.DataFrame
+        Model to train and explain.
+    problem_type :{"classification", "regression"}
+        Type of machine learning problem.
+    fvoid : float, default=None
+        Prediction when all attributs are unknown. If None, the default value is used (expected value for each class for classification, mean label for regression).
+    look_at : int, default=None
+        Class to look at when computing influences in case of classification problem.
+        If None, prediction is used.
+
+    Returns
+    -------
+    complete_influences : two-dimensional list
+        Influences for each attributs and each instances in the dataset.
+
+    """
+
     groups = generate_groups_wo_label(X.shape[1])
 
     pretrained_models = train_models(model, X, y, groups, problem_type, fvoid)
-    raw_groups_influences = explain_groups_w_retrain(
+    raw_influences = explain_groups_w_retrain(
         pretrained_models, X, problem_type, look_at
     )
 
-    complete_influences = compute_complete_influences(raw_groups_influences, X)
+    complete_influences = compute_complete_influences(raw_influences, X)
 
     return complete_influences

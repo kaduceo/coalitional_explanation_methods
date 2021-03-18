@@ -22,6 +22,19 @@ import matplotlib.pyplot as plt
 
 
 def draw_avg_influence_per_class(influences, labels, labels_name):
+    """
+    Draws the absolute average influence for each class.
+
+    Parameters
+    ----------
+    influences : 
+        Influences to show.
+    labels : pandas.DataFrame
+        The label values to split data.
+    labels_name : list
+        Class names.
+
+    """
     complete_datas = influences.copy()
     complete_datas["labels"] = labels
     avg_infs_per_class = pd.DataFrame(columns=influences.columns)
@@ -39,6 +52,23 @@ def draw_avg_influence_per_class(influences, labels, labels_name):
 
 
 def draw_influence_instance(influences, label, labels_name, id_instance, problem_type):
+    """
+    Draws the influence of the instance of interess.
+
+    Parameters
+    ----------
+    influences : pandas.DataFrame
+        Influences to show.
+    labels : pandas.DataFrame
+        The label values to split data.
+    labels_name : list
+        Class names.
+    id_instance : int
+        Index of the instance to show.
+    problem_type : {"classification", "regression"}
+        Type of machine learning problem.
+
+    """
     infs_instance = influences.iloc[id_instance].sort_values(ascending=True)
     colors = ["green" if x > 0 else "red" for x in infs_instance]
 

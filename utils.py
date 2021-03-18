@@ -104,7 +104,6 @@ def check_all_attributs_groups(groups, nb_attributs):
     -------
     groups : two-dimension list
         Checked list of groups, with all attributs.
-
     """
 
     for i in range(nb_attributs):
@@ -142,6 +141,8 @@ def train_models(model, X, y, groups, problem_type, fvoid):
         dataframe of the expected prediction from the model.
     groups : two-dimensional list
         List of all possible attributs subgroups.
+    fvoid : float
+        Prediction when all attributs are unknown. If None, the default value is used : expected value for each class for classification, mean label for regression.
 
     Returns
     -------
@@ -176,36 +177,39 @@ def train_models(model, X, y, groups, problem_type, fvoid):
 
 def explain_groups_w_retrain(pretrained_models, X, problem_type, look_at):
     """
-    Compute the influence of each atributs or group of attributs for the instance
-    in parameter.
+    Computes for each instance, the influences of all attribute groups used to pre-train models.
 
     Parameters
     ----------
-    pretrained_models : dictionary {tuple : pickle object}
+    pretrained_models : dict {tuple : pickle object}
         Dictionary of all the Pre-trained models (serialized with pickle).
     X : Pandas.Dataframe
         Dataframe of the input datas.
+    problem_type : {"classification", "regression"}
+        Type of machine learning problem.
+    look_at : int
+        class to look at when computing influences in case of classification problem.
 
     Returns
     -------
-    explanations_groups : dictionary {tuple : float}
-        Influence of each attributs/group of attributs. The key is a tuple with
-        the indexes of the attributs, the value the influence of the group.
+    raw_influences : dict {int : dict {tuple : float}}
+        Influence of each group of attributs for each instances. 
+        The key is the instance index, the value is a dictionary with attributs group tuple and the influence of the group.
     """
 
-    explanations_groups = {}
+    raw_influences = {}
 
     for i in X.index:
-        explanations_groups[i] = {}
+        raw_influences[i] = {}
 
     all_attributes = tuple([i for i in range(X.shape[1])])
     preds = pickle.loads(pretrained_models.get(all_attributes)).predict(X)
     fvoid = pretrained_models.get(())
 
-    for group in tqdm(pretrained_models.keys(), desc="Raw impact"):
+    for group in tqdm(pretrained_models.keys(), desc="Raw influences"):
         if len(group) == 0:
             for i in X.index:
-                explanations_groups[i][group] = 0.0
+                raw_influences[i][group] = 0.0
         else:
             model = pickle.loads(pretrained_models.get(group))
             X_groups = X[X.columns[list(group)]]
@@ -217,7 +221,7 @@ def explain_groups_w_retrain(pretrained_models, X, problem_type, look_at):
                     look_at_i = look_at
                     if look_at == None:
                         look_at_i = preds[i]
-                    explanations_groups[i][group] = (
+                    raw_influences[i][group] = (
                         preds_proba[i][look_at_i] - fvoid[look_at_i]
                     )
 
@@ -225,45 +229,74 @@ def explain_groups_w_retrain(pretrained_models, X, problem_type, look_at):
                 preds_ = model.predict(X_groups)
 
                 for i in X.index:
-                    explanations_groups[i][group] = preds_[i] - fvoid
+                    raw_influences[i][group] = preds_[i] - fvoid
 
-    return explanations_groups
-
-
-"""
-Compute the penalisation values for complete, coalitional 
-and k-depth methods
-
-Parameters
-----------
-n : int
-    length of the subgroup.
-s : int
-    length of the group.
-k : int
-    max cardinal of the subgroups for k-depth.
-
-Returns
--------
-Float
-    the penalisation for the subgroup.
-
-"""
+    return raw_influences
 
 
 def standard_penalisation(s, n):
+    """
+    Compute the penalisation values for complete method.
+
+    Parameters
+    ----------
+    n : int
+        length of the subgroup.
+    s : int
+        length of the group.
+
+    Returns
+    -------
+    Float
+        the penalisation for the subgroup.
+
+    """
     return (np.math.factorial(s) * np.math.factorial(n - s - 1)) / (
         np.math.factorial(n)
     )
 
 
 def kdepth_penalisation(s, n, k):
+    """
+    Compute the penalisation values for k-depth method.
+
+    Parameters
+    ----------
+    n : int
+        length of the subgroup.
+    s : int
+        length of the group.
+    k : int
+        max cardinal of the subgroups.
+
+    Returns
+    -------
+    Float
+        the penalisation for the subgroup.
+
+    """
     return (np.math.factorial(s) * np.math.factorial(n - s - 1)) / (
         k * np.math.factorial(n - 1)
     )
 
 
 def coal_penalisation(s, n):
+    """
+    Compute the penalisation values for coalitional method.
+
+    Parameters
+    ----------
+    n : int
+        length of the subgroup.
+    s : int
+        length of the group.
+
+    Returns
+    -------
+    Float
+        the penalisation for the subgroup.
+
+    """
     return np.math.factorial(s) * np.math.factorial(n - s - 1)
 
 
@@ -275,7 +308,7 @@ def influence_calcul(pena, raw_infs, group, i):
     ----------
     pena : float
         Penalisation of the group, regarding the method.
-    raw_infs : dictionary
+    raw_infs : dict {tuple : float}
         Influence of each group of attributs for one instance.
     group : list
         Attributs in the group to study.
