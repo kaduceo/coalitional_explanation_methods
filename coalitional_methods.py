@@ -26,6 +26,7 @@ import sys
 import pandas as pd
 import numpy as np
 import itertools
+from tqdm import tqdm
 
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.decomposition import PCA
@@ -360,7 +361,7 @@ def compute_coalitional_influences(raw_influences, X, relevant_groups):
 
     coalitional_influences = pd.DataFrame(columns=X.columns)
 
-    for instance in X.index:
+    for instance in tqdm(X.index, desc="Coalitional influences"):
         raw_infs = raw_influences[instance]
         influences = compute_instance_coal_inf(raw_infs, X.columns, relevant_groups)
         coalitional_influences = coalitional_influences.append(

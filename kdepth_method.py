@@ -23,6 +23,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
 
 import pandas as pd
+from tqdm import tqdm
 
 from utils import kdepth_penalisation, generate_groups_wo_label
 from utils import train_models, explain_groups_w_retrain, influence_calcul
@@ -85,7 +86,7 @@ def compute_kdepth_influences(raw_groups_influences, X, relevant_groups, k):
     """
     kdepth_influences = pd.DataFrame(columns=X.columns)
 
-    for instance in X.index:
+    for instance in tqdm(X.index, desc="K-depth influences"):
         raw_infs = raw_groups_influences[instance]
         influences = compute_instance_kdepth_inf(
             raw_infs, X.columns, relevant_groups, k
@@ -158,7 +159,7 @@ def compute_linear_influences(raw_groups_influences, X):
 
     linear_influences = pd.DataFrame(columns=X.columns)
 
-    for instance in X.index:
+    for instance in tqdm(X.index, desc="Linear influences"):
         influences = {}
 
         for i in range(X.shape[1]):

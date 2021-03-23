@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import random
 import pandas as pd
+from tqdm import tqdm
 
 from utils import train_models, explain_groups_w_retrain, influence_calcul
 from utils import check_all_attributs_groups, compute_subgroups_correlation
@@ -196,13 +197,13 @@ def compute_instance_coal_inf(raw_instance_inf, columns, relevant_groups):
     return influences
 
 
-def compute_coalitional_influences(raw_groups_influences, X, relevant_groups):
+def compute_coal_model_influences(raw_groups_influences, X, relevant_groups):
     """Coalitional method for all instances, when attributs overlap in groups
     (Ferrettini et al. 2020)"""
 
     coalitional_influences = pd.DataFrame(columns=X.columns)
 
-    for instance in X.index:
+    for instance in tqdm(X.index, desc="Model coalition influences"):
         raw_infs = raw_groups_influences[instance]
         influences = compute_instance_coal_inf(raw_infs, X.columns, relevant_groups)
         coalitional_influences = coalitional_influences.append(
@@ -221,7 +222,7 @@ def modelbased_method(X, y, model, threshold, problem_type, fvoid=None, look_at=
     raw_groups_influences = explain_groups_w_retrain(
         pretrained_models, X, problem_type, look_at
     )
-    coalition_influences = compute_coalitional_influences(
+    coalition_influences = compute_coal_model_influences(
         raw_groups_influences, X, groups
     )
 

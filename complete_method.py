@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import pandas as pd
+from tqdm import tqdm
 
 from utils import standard_penalisation, generate_groups_wo_label
 from utils import train_models, explain_groups_w_retrain, influence_calcul
@@ -75,7 +76,7 @@ def compute_complete_influences(raw_influences, X):
 
     complete_influences = pd.DataFrame(columns=X.columns)
 
-    for instance in X.index:
+    for instance in tqdm(X.index, desc="Complete influences"):
         raw_infs = raw_influences[instance]
         influences = compute_instance_complete_inf(raw_infs, X.columns)
         complete_influences = complete_influences.append(
