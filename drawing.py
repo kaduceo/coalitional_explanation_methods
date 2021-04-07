@@ -69,7 +69,7 @@ def draw_influence_instance(influences, label, labels_name, id_instance, problem
         Type of machine learning problem.
 
     """
-    infs_instance = influences.iloc[id_instance].sort_values(ascending=True)
+    infs_instance = influences.loc[id_instance].sort_values(ascending=True)
     colors = ["green" if x > 0 else "red" for x in infs_instance]
 
     if problem_type == "Regression":

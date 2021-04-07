@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import numpy as np
+import pandas as pd
 import pickle
 from sklearn.base import clone
 from tqdm import tqdm
@@ -215,21 +216,23 @@ def explain_groups_w_retrain(pretrained_models, X, problem_type, look_at):
             X_groups = X[X.columns[list(group)]]
 
             if problem_type == "Classification":
-                preds_proba = model.predict_proba(X_groups)
+                preds_proba = pd.DataFrame(
+                    model.predict_proba(X_groups), index=X_groups.index
+                )
 
                 for i in X.index:
                     look_at_i = look_at
                     if look_at == None:
                         look_at_i = preds[i]
                     raw_influences[i][group] = (
-                        preds_proba[i][look_at_i] - fvoid[look_at_i]
+                        preds_proba.loc[i, look_at_i] - fvoid[look_at_i]
                     )
 
             elif problem_type == "Regression":
-                preds_ = model.predict(X_groups)
+                preds_ = pd.DataFrame(model.predict(X_groups), index=X_groups.index)
 
                 for i in X.index:
-                    raw_influences[i][group] = preds_[i] - fvoid
+                    raw_influences[i][group] = preds_.loc[i,0] - fvoid
 
     return raw_influences
 
