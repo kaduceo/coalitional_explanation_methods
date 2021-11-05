@@ -65,7 +65,9 @@ def compute_instance_kdepth_inf(raw_instance_inf, columns, relevant_groups, k):
     return influences
 
 
-def compute_kdepth_influences(raw_groups_influences, X, relevant_groups, k):
+def compute_kdepth_influences(
+    raw_groups_influences, X, relevant_groups, k, progression_bar
+):
     """ K-depth method, for all instances
     
     Parameters
@@ -86,7 +88,9 @@ def compute_kdepth_influences(raw_groups_influences, X, relevant_groups, k):
     """
     kdepth_influences = pd.DataFrame(columns=X.columns)
 
-    for instance in tqdm(X.index, desc="K-depth influences"):
+    for instance in tqdm(
+        X.index, desc="K-depth influences", disable=not progression_bar
+    ):
         raw_infs = raw_groups_influences[instance]
         influences = compute_instance_kdepth_inf(
             raw_infs, X.columns, relevant_groups, k
@@ -98,7 +102,9 @@ def compute_kdepth_influences(raw_groups_influences, X, relevant_groups, k):
     return kdepth_influences
 
 
-def kdepth_method(X, y, model, k, problem_type, fvoid=None, look_at=None):
+def kdepth_method(
+    X, y, model, k, problem_type, fvoid=None, look_at=None, progression_bar=True
+):
     """
     Compute the influences based on the K-depth method.
 
@@ -129,18 +135,20 @@ def kdepth_method(X, y, model, k, problem_type, fvoid=None, look_at=None):
     groups = generate_groups_wo_label(X.shape[1])
     groups_kdepth = [groups[i] for i in range(len(groups)) if len(groups[i]) <= k]
 
-    pretrained_models = train_models(model, X, y, groups_kdepth, problem_type, fvoid)
+    pretrained_models = train_models(
+        model, X, y, groups_kdepth, problem_type, fvoid, progression_bar
+    )
     raw_groups_influences = explain_groups_w_retrain(
-        pretrained_models, X, problem_type, look_at
+        pretrained_models, X, problem_type, look_at, progression_bar
     )
     kdepth_influences = compute_kdepth_influences(
-        raw_groups_influences, X, groups_kdepth, k
+        raw_groups_influences, X, groups_kdepth, k, progression_bar
     )
 
     return kdepth_influences
 
 
-def compute_linear_influences(raw_groups_influences, X):
+def compute_linear_influences(raw_groups_influences, X, progression_bar):
     """
     Linear method, for all instances
     
@@ -159,7 +167,9 @@ def compute_linear_influences(raw_groups_influences, X):
 
     linear_influences = pd.DataFrame(columns=X.columns)
 
-    for instance in tqdm(X.index, desc="Linear influences"):
+    for instance in tqdm(
+        X.index, desc="Linear influences", disable=not progression_bar
+    ):
         influences = {}
 
         for i in range(X.shape[1]):
@@ -172,7 +182,9 @@ def compute_linear_influences(raw_groups_influences, X):
     return linear_influences
 
 
-def linear_method(X, y, model, problem_type, fvoid=None, look_at=None):
+def linear_method(
+    X, y, model, problem_type, fvoid=None, look_at=None, progression_bar=True
+):
     """
     Compute the influences based on the linear method.
 
@@ -200,11 +212,15 @@ def linear_method(X, y, model, problem_type, fvoid=None, look_at=None):
     groups = [[i] for i in range(X.shape[1])]
     groups += [[]]
 
-    pretrained_models = train_models(model, X, y, groups, problem_type, fvoid)
+    pretrained_models = train_models(
+        model, X, y, groups, problem_type, fvoid, progression_bar
+    )
     raw_groups_influences = explain_groups_w_retrain(
-        pretrained_models, X, problem_type, look_at
+        pretrained_models, X, problem_type, look_at, progression_bar
     )
 
-    linear_influences = compute_linear_influences(raw_groups_influences, X)
+    linear_influences = compute_linear_influences(
+        raw_groups_influences, X, progression_bar
+    )
 
     return linear_influences

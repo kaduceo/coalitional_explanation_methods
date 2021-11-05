@@ -197,13 +197,17 @@ def compute_instance_coal_inf(raw_instance_inf, columns, relevant_groups):
     return influences
 
 
-def compute_coal_model_influences(raw_groups_influences, X, relevant_groups):
+def compute_coal_model_influences(
+    raw_groups_influences, X, relevant_groups, progression_bar
+):
     """Coalitional method for all instances, when attributs overlap in groups
     (Ferrettini et al. 2020)"""
 
     coalitional_influences = pd.DataFrame(columns=X.columns)
 
-    for instance in tqdm(X.index, desc="Model coalition influences"):
+    for instance in tqdm(
+        X.index, desc="Model coalition influences", disable=not progression_bar
+    ):
         raw_infs = raw_groups_influences[instance]
         influences = compute_instance_coal_inf(raw_infs, X.columns, relevant_groups)
         coalitional_influences = coalitional_influences.append(
@@ -213,17 +217,21 @@ def compute_coal_model_influences(raw_groups_influences, X, relevant_groups):
     return coalitional_influences
 
 
-def modelbased_method(X, y, model, threshold, problem_type, fvoid=None, look_at=None):
+def modelbased_method(
+    X, y, model, threshold, problem_type, fvoid=None, look_at=None, progression_bar=True
+):
     groups = model_grouping(X, model, threshold) if X.shape[1] != 1 else [[0]]
 
     groups = compute_subgroups_correlation(groups) + [[]]
 
-    pretrained_models = train_models(model, X, y, groups, problem_type, fvoid)
+    pretrained_models = train_models(
+        model, X, y, groups, problem_type, fvoid, progression_bar
+    )
     raw_groups_influences = explain_groups_w_retrain(
-        pretrained_models, X, problem_type, look_at
+        pretrained_models, X, problem_type, look_at, progression_bar
     )
     coalition_influences = compute_coal_model_influences(
-        raw_groups_influences, X, groups
+        raw_groups_influences, X, groups, progression_bar
     )
 
     return coalition_influences

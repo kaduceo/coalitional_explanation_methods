@@ -56,7 +56,7 @@ def compute_instance_complete_inf(raw_instance_inf, columns):
     return influences
 
 
-def compute_complete_influences(raw_influences, X):
+def compute_complete_influences(raw_influences, X, progression_bar):
     """
     Complete method, for all instances
     Shapley value approximation (Strumbelj et al. 2010)
@@ -76,7 +76,9 @@ def compute_complete_influences(raw_influences, X):
 
     complete_influences = pd.DataFrame(columns=X.columns)
 
-    for instance in tqdm(X.index, desc="Complete influences"):
+    for instance in tqdm(
+        X.index, desc="Complete influences", disable=not progression_bar
+    ):
         raw_infs = raw_influences[instance]
         influences = compute_instance_complete_inf(raw_infs, X.columns)
         complete_influences = complete_influences.append(
@@ -86,7 +88,9 @@ def compute_complete_influences(raw_influences, X):
     return complete_influences
 
 
-def complete_method(X, y, model, problem_type, fvoid=None, look_at=None):
+def complete_method(
+    X, y, model, problem_type, fvoid=None, look_at=None, progression_bar=True
+):
     """
     Compute the influences based on the complete method.
 
@@ -115,11 +119,15 @@ def complete_method(X, y, model, problem_type, fvoid=None, look_at=None):
 
     groups = generate_groups_wo_label(X.shape[1])
 
-    pretrained_models = train_models(model, X, y, groups, problem_type, fvoid)
+    pretrained_models = train_models(
+        model, X, y, groups, problem_type, fvoid, progression_bar
+    )
     raw_influences = explain_groups_w_retrain(
-        pretrained_models, X, problem_type, look_at
+        pretrained_models, X, problem_type, look_at, progression_bar
     )
 
-    complete_influences = compute_complete_influences(raw_influences, X)
+    complete_influences = compute_complete_influences(
+        raw_influences, X, progression_bar
+    )
 
     return complete_influences

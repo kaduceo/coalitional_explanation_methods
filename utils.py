@@ -127,7 +127,7 @@ def remove_inclusions(groups):
     ]
 
 
-def train_models(model, X, y, groups, problem_type, fvoid):
+def train_models(model, X, y, groups, problem_type, fvoid, progression_bar=True):
     """
     Trains the model with all the attributs, compute the
     and an array of model, each one wo one group of attribut
@@ -144,6 +144,8 @@ def train_models(model, X, y, groups, problem_type, fvoid):
         List of all possible attributs subgroups.
     fvoid : float
         Prediction when all attributs are unknown. If None, the default value is used : expected value for each class for classification, mean label for regression.
+    progression_bar : boolean, default=True
+        If True, progression bar are shown during computing explanations
 
     Returns
     -------
@@ -157,7 +159,7 @@ def train_models(model, X, y, groups, problem_type, fvoid):
     complete_group = [i for i in range(X.shape[1])]
     pretrained_models[tuple(complete_group)] = pickle.dumps(model)
 
-    for group in tqdm(groups, desc="Train"):
+    for group in tqdm(groups, desc="Train", disable=not progression_bar):
         model_clone = clone(model)
 
         if len(group) == 0:
@@ -176,7 +178,9 @@ def train_models(model, X, y, groups, problem_type, fvoid):
     return pretrained_models
 
 
-def explain_groups_w_retrain(pretrained_models, X, problem_type, look_at):
+def explain_groups_w_retrain(
+    pretrained_models, X, problem_type, look_at, progression_bar=True
+):
     """
     Computes for each instance, the influences of all attribute groups used to pre-train models.
 
@@ -190,6 +194,8 @@ def explain_groups_w_retrain(pretrained_models, X, problem_type, look_at):
         Type of machine learning problem.
     look_at : int
         class to look at when computing influences in case of classification problem.
+    progression_bar : boolean, default=True
+        If True, progression bar are shown during computing explanations
 
     Returns
     -------
@@ -207,7 +213,9 @@ def explain_groups_w_retrain(pretrained_models, X, problem_type, look_at):
     preds = pickle.loads(pretrained_models.get(all_attributes)).predict(X)
     fvoid = pretrained_models.get(())
 
-    for group in tqdm(pretrained_models.keys(), desc="Raw influences"):
+    for group in tqdm(
+        pretrained_models.keys(), desc="Raw influences", disable=not progression_bar
+    ):
         if len(group) == 0:
             for i in X.index:
                 raw_influences[i][group] = 0.0
@@ -232,7 +240,7 @@ def explain_groups_w_retrain(pretrained_models, X, problem_type, look_at):
                 preds_ = pd.DataFrame(model.predict(X_groups), index=X_groups.index)
 
                 for i in X.index:
-                    raw_influences[i][group] = preds_.loc[i,0] - fvoid
+                    raw_influences[i][group] = preds_.loc[i, 0] - fvoid
 
     return raw_influences
 
