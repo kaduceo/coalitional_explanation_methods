@@ -167,7 +167,7 @@ def spearman_grouping(datas, threshold, reverse=False):
     return groups
 
 
-def pca_grouping(datas, threshold):
+def pca_grouping(datas, threshold, reverse=False):
     """
     Generate groups of attributs based on PCA method.
 
@@ -270,7 +270,7 @@ def find_alpha_rate(coal_function, n_rate, X, max_iterations=100):
     return subgroups_best, alpha_best
 
 
-def complexity_coal_groups(X, rate, grouping_function):
+def complexity_coal_groups(X, rate, grouping_function, reverse):
     """
     Compute attributs groups based on the method and the complexity rate in parameter.
 
@@ -282,6 +282,8 @@ def complexity_coal_groups(X, rate, grouping_function):
         Complexity percentage.
     grouping_function : string
         Name of the coalitional method to use.
+    reverse : bool
+        Type of method to use for Spearman and VIF coalition method.
 
     Returns
     -------
@@ -292,7 +294,7 @@ def complexity_coal_groups(X, rate, grouping_function):
     n_rate = int(np.round(n_total * rate, 0))
     coal_groups, alpha = find_alpha_rate(
         coal_function=lambda X_, threshold: remove_inclusions(
-            grouping_function(X_, threshold)
+            grouping_function(X_, threshold, reverse)
         ),
         n_rate=n_rate,
         X=X,
@@ -341,7 +343,9 @@ def compute_instance_coal_inf(raw_instance_inf, columns, relevant_groups):
     return influences
 
 
-def compute_coalitional_influences(raw_influences, X, relevant_groups):
+def compute_coalitional_influences(
+    raw_influences, X, relevant_groups, progression_bar=True
+):
     """Coalitional method for all instances, when attributs overlap in groups.
     
     Parameters
@@ -352,6 +356,8 @@ def compute_coalitional_influences(raw_influences, X, relevant_groups):
         The training input samples.
     relevant_groups : list
         Groups of attributs defined by the coalition method.
+    progression_bar : boolean, default=True
+        If True, progression bar are shown during computing explanations
 
     Returns
     -------
@@ -361,7 +367,9 @@ def compute_coalitional_influences(raw_influences, X, relevant_groups):
 
     coalitional_influences = pd.DataFrame(columns=X.columns)
 
-    for instance in tqdm(X.index, desc="Coalitional influences"):
+    for instance in tqdm(
+        X.index, desc="Coalitional influences", disable=not progression_bar
+    ):
         raw_infs = raw_influences[instance]
         influences = compute_instance_coal_inf(raw_infs, X.columns, relevant_groups)
         coalitional_influences = coalitional_influences.append(
@@ -383,6 +391,7 @@ def coalitional_method(
     reverse=False,
     complexity=False,
     scaler=False,
+    progression_bar=True,
 ):
 
     """
@@ -415,6 +424,8 @@ def coalitional_method(
         If True, rate is use as complexity rate to compute the alpha-threshold.
     scaler : boolean, default=False
         If True, a Standard Scaler is apply to data before compute PCA coalitional method.
+    progression_bar : boolean, default=True
+        If True, progression bar are shown during computing explanations
 
     Returns
     -------
@@ -433,19 +444,21 @@ def coalitional_method(
         if method == "pca" and scaler:
             X = StandardScaler().fit_transform(X)
         if complexity:
-            groups = complexity_coal_groups(X, rate, methods[method])
+            groups = complexity_coal_groups(X, rate, methods[method], reverse)
         else:
-            groups = methods[method](X, rate)
+            groups = methods[method](X, rate, reverse)
 
     subgroups = compute_subgroups_correlation(groups) + [[]]
 
-    pretrained_models = train_models(model, X, y, subgroups, problem_type, fvoid)
+    pretrained_models = train_models(
+        model, X, y, subgroups, problem_type, fvoid, progression_bar
+    )
     raw_groups_influences = explain_groups_w_retrain(
-        pretrained_models, X, problem_type, look_at
+        pretrained_models, X, problem_type, look_at, progression_bar
     )
 
     coalition_influences = compute_coalitional_influences(
-        raw_groups_influences, X, groups
+        raw_groups_influences, X, groups, progression_bar
     )
 
     return coalition_influences
