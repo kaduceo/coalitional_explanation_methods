@@ -437,9 +437,9 @@ def coalitional_method(
         else:
             groups = methods[method](X, rate)
 
-    groups = compute_subgroups_correlation(groups) + [[]]
+    subgroups = compute_subgroups_correlation(groups) + [[]]
 
-    pretrained_models = train_models(model, X, y, groups, problem_type, fvoid)
+    pretrained_models = train_models(model, X, y, subgroups, problem_type, fvoid)
     raw_groups_influences = explain_groups_w_retrain(
         pretrained_models, X, problem_type, look_at
     )
