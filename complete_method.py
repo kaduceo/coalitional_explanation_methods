@@ -28,7 +28,7 @@ def compute_instance_complete_inf(raw_instance_inf, columns):
     """
     Computes influence of each attributs for one instance with the complete method.
     Shapley value approximation (Strumbelj et al. 2010)
-    
+
     Parameters
     ----------
     raw_instance_inf : dict {tuple : float}
@@ -60,7 +60,7 @@ def compute_complete_influences(raw_influences, X, progression_bar):
     """
     Complete method, for all instances
     Shapley value approximation (Strumbelj et al. 2010)
-    
+
     Parameters
     ----------
     raw_influences : dict {int : dict {tuple : float}}
@@ -92,7 +92,8 @@ def complete_method(
     X, y, model, problem_type, fvoid=None, look_at=None, progression_bar=True
 ):
     """
-    Compute the influences based on the complete method.
+    Initialise the explanation method and compute the influences based on the complete method for the instances used to train the model.
+
 
     Parameters
     ----------
@@ -100,8 +101,8 @@ def complete_method(
         The training input samples.
     y : pandas.DataFrame
         The target values (class labels in classification, real numbers in regression).
-    model : pandas.DataFrame
-        Model to train and explain.
+    model
+        Trained model to explain
     problem_type :{"classification", "regression"}
         Type of machine learning problem.
     fvoid : float, default=None
@@ -114,7 +115,8 @@ def complete_method(
     -------
     complete_influences : two-dimensional list
         Influences for each attributs and each instances in the dataset.
-
+    pretrained_models : dictionary {tuple : pickle object}
+        Models trained to compute explanations.
     """
 
     groups = generate_groups_wo_label(X.shape[1])
@@ -122,6 +124,7 @@ def complete_method(
     pretrained_models = train_models(
         model, X, y, groups, problem_type, fvoid, progression_bar
     )
+
     raw_influences = explain_groups_w_retrain(
         pretrained_models, X, problem_type, look_at, progression_bar
     )
@@ -130,4 +133,42 @@ def complete_method(
         raw_influences, X, progression_bar
     )
 
-    return complete_influences
+    return complete_influences, pretrained_models
+
+
+def compute_influences(
+    X,
+    pretrained_models,
+    problem_type,
+    look_at=None,
+    progression_bar=True,
+):
+    """
+    Compute the influences based on the complete method for the instances in parameter.
+
+
+    Parameters
+    ----------
+    X : pandas.DatFrame
+        The training input samples.
+    pretrained_models : dictionary {tuple : pickle object}
+        Models trained to compute explanations.
+    problem_type :{"classification", "regression"}
+        Type of machine learning problem.
+    look_at : int, default=None
+        Class to look at when computing influences in case of classification problem.
+        If None, prediction is used.
+
+    Returns
+    -------
+    complete_influences : two-dimensional list
+        Influences for each attributs and each instances in the dataset.
+    """
+
+    raw_influences = explain_groups_w_retrain(
+        pretrained_models, X, problem_type, look_at, progression_bar
+    )
+
+    influences = compute_complete_influences(raw_influences, X, progression_bar)
+
+    return influences

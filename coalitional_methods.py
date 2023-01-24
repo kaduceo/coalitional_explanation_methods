@@ -304,10 +304,10 @@ def complexity_coal_groups(X, rate, grouping_function, reverse):
 
 
 def compute_instance_coal_inf(raw_instance_inf, columns, relevant_groups):
-    """ 
+    """
     Compute the influence of each attribut for one instance, based on the coalitional method.
     Attributs can overlap in groups.
-    
+
     Parameters
     ----------
     raw_instance_inf : dict {tuple : float}
@@ -347,7 +347,7 @@ def compute_coalitional_influences(
     raw_influences, X, relevant_groups, progression_bar=True
 ):
     """Coalitional method for all instances, when attributs overlap in groups.
-    
+
     Parameters
     ----------
     raw_influences : dict {int : dict {tuple : float}}
@@ -415,12 +415,12 @@ def coalitional_method(
         Class to look at when computing influences in case of classification problem.
         If None, prediction is used.
     method : {"pca", "spearman", "vif"}, default="spearman"
-        Name of the coalition method to compute attributs groups. 
+        Name of the coalition method to compute attributs groups.
     reverse : boolean, default=False
         Type of method to use for Spearman and VIF coalition method.
     complexity : boolean, default=False
-        Approach to calculating the threshold for coalition methods. 
-        If False, rate parameter is use as alpha-threshold. 
+        Approach to calculating the threshold for coalition methods.
+        If False, rate parameter is use as alpha-threshold.
         If True, rate is use as complexity rate to compute the alpha-threshold.
     scaler : boolean, default=False
         If True, a Standard Scaler is apply to data before compute PCA coalitional method.
@@ -430,7 +430,7 @@ def coalitional_method(
     Returns
     -------
     coalition_influences : two-dimensional list
-        Influences for each attributs and each instances in the dataset.  
+        Influences for each attributs and each instances in the dataset.
     """
     methods = {"pca": pca_grouping, "spearman": spearman_grouping, "vif": vif_grouping}
 
@@ -461,4 +461,47 @@ def coalitional_method(
         raw_groups_influences, X, groups, progression_bar
     )
 
-    return coalition_influences
+    return coalition_influences, pretrained_models, groups
+
+
+def compute_influences(
+    X,
+    pretrained_models,
+    problem_type,
+    groups,
+    look_at=None,
+    progression_bar=True,
+):
+    """
+    Compute the influences based on the coalitional method for the instances in parameter.
+
+
+    Parameters
+    ----------
+    X : pandas.DatFrame
+        The training input samples.
+    pretrained_models : dictionary {tuple : pickle object}
+        Models trained to compute explanations.
+    problem_type :{"classification", "regression"}
+        Type of machine learning problem.
+    groups : list
+        Groups of attributs used to compute explanations
+    look_at : int, default=None
+        Class to look at when computing influences in case of classification problem.
+        If None, prediction is used.
+
+    Returns
+    -------
+    complete_influences : two-dimensional list
+        Influences for each attributs and each instances in the dataset.
+    """
+
+    raw_groups_influences = explain_groups_w_retrain(
+        pretrained_models, X, problem_type, look_at, progression_bar
+    )
+
+    influences = compute_coalitional_influences(
+        raw_groups_influences, X, groups, progression_bar
+    )
+
+    return influences

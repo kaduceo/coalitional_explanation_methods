@@ -175,7 +175,7 @@ def model_grouping(datas, model, threshold):
 
 
 def compute_instance_coal_inf(raw_instance_inf, columns, relevant_groups):
-    """ Coalitional method for one instance, when attributs overlap in groups (Ferrettini et al. 2020)"""
+    """Coalitional method for one instance, when attributs overlap in groups (Ferrettini et al. 2020)"""
 
     influences = dict([(c, 0) for c in columns])
     denoms_shap = dict([(c, 0) for c in columns])
@@ -234,4 +234,47 @@ def modelbased_method(
         raw_groups_influences, X, groups, progression_bar
     )
 
-    return coalition_influences
+    return coalition_influences, pretrained_models, groups
+
+
+def compute_influences(
+    X,
+    pretrained_models,
+    problem_type,
+    groups,
+    look_at=None,
+    progression_bar=True,
+):
+    """
+    Compute the influences based on the model-based coalitional method for the instances in parameter.
+
+
+    Parameters
+    ----------
+    X : pandas.DatFrame
+        The training input samples.
+    pretrained_models : dictionary {tuple : pickle object}
+        Models trained to compute explanations.
+    problem_type :{"classification", "regression"}
+        Type of machine learning problem.
+    groups : list
+        Groups of attributs used to compute explanations
+    look_at : int, default=None
+        Class to look at when computing influences in case of classification problem.
+        If None, prediction is used.
+
+    Returns
+    -------
+    complete_influences : two-dimensional list
+        Influences for each attributs and each instances in the dataset.
+    """
+
+    raw_groups_influences = explain_groups_w_retrain(
+        pretrained_models, X, problem_type, look_at, progression_bar
+    )
+
+    influences = compute_coal_model_influences(
+        raw_groups_influences, X, groups, progression_bar
+    )
+
+    return influences

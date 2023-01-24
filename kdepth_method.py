@@ -30,10 +30,10 @@ from utils import train_models, explain_groups_w_retrain, influence_calcul
 
 
 def compute_instance_kdepth_inf(raw_instance_inf, columns, relevant_groups, k):
-    """    
+    """
     Computes influence of each attributs for one instance with the K-depth method.
     (Ferrettini et al. 2020)
-    
+
     Parameters
     ----------
     raw_instance_inf : dict {tuple : float}
@@ -68,8 +68,8 @@ def compute_instance_kdepth_inf(raw_instance_inf, columns, relevant_groups, k):
 def compute_kdepth_influences(
     raw_groups_influences, X, relevant_groups, k, progression_bar
 ):
-    """ K-depth method, for all instances
-    
+    """K-depth method, for all instances
+
     Parameters
     ----------
     raw_influences : dict {int : dict {tuple : float}}
@@ -145,13 +145,57 @@ def kdepth_method(
         raw_groups_influences, X, groups_kdepth, k, progression_bar
     )
 
-    return kdepth_influences
+    return kdepth_influences, pretrained_models, groups_kdepth
+
+
+def compute_influences(
+    X,
+    pretrained_models,
+    problem_type,
+    groups,
+    k,
+    look_at=None,
+    progression_bar=True,
+):
+    """
+    Compute the influences based on the kdepth method for the instances in parameter.
+
+
+    Parameters
+    ----------
+    X : pandas.DatFrame
+        The training input samples.
+    pretrained_models : dictionary {tuple : pickle object}
+        Models trained to compute explanations.
+    problem_type :{"classification", "regression"}
+        Type of machine learning problem.
+    groups : list
+        Groups of attributs used to compute explanations
+    look_at : int, default=None
+        Class to look at when computing influences in case of classification problem.
+        If None, prediction is used.
+
+    Returns
+    -------
+    complete_influences : two-dimensional list
+        Influences for each attributs and each instances in the dataset.
+    """
+
+    raw_groups_influences = explain_groups_w_retrain(
+        pretrained_models, X, problem_type, look_at, progression_bar
+    )
+
+    influences = compute_kdepth_influences(
+        raw_groups_influences, X, groups, k, progression_bar
+    )
+
+    return influences
 
 
 def compute_linear_influences(raw_groups_influences, X, progression_bar):
     """
     Linear method, for all instances
-    
+
     Parameters
     ----------
     raw_influences : dict {int : dict {tuple : float}}
@@ -223,4 +267,42 @@ def linear_method(
         raw_groups_influences, X, progression_bar
     )
 
-    return linear_influences
+    return linear_influences, pretrained_models
+
+
+def compute_linear_influences(
+    X,
+    pretrained_models,
+    problem_type,
+    look_at=None,
+    progression_bar=True,
+):
+    """
+    Compute the influences based on the kdepth method for the instances in parameter.
+
+
+    Parameters
+    ----------
+    X : pandas.DatFrame
+        The training input samples.
+    pretrained_models : dictionary {tuple : pickle object}
+        Models trained to compute explanations.
+    problem_type :{"classification", "regression"}
+        Type of machine learning problem.
+    look_at : int, default=None
+        Class to look at when computing influences in case of classification problem.
+        If None, prediction is used.
+
+    Returns
+    -------
+    complete_influences : two-dimensional list
+        Influences for each attributs and each instances in the dataset.
+    """
+
+    raw_groups_influences = explain_groups_w_retrain(
+        pretrained_models, X, problem_type, look_at, progression_bar
+    )
+
+    influences = compute_linear_influences(raw_groups_influences, X, progression_bar)
+
+    return influences
